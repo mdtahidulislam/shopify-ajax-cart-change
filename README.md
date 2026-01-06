@@ -21,6 +21,10 @@ class CartRemoveButton extends HTMLElement {
 		this.addEventListener('click', this.removeCartItem.bind(this))
 	}
 
+	disconnectedCallback() {
+		this.removeEventListener('click', this.removeCartItem.bind(this))
+	}
+
 	removeCartItem(e) {
 		e.preventDefault()
 		console.log(e)
@@ -33,7 +37,7 @@ if (!customElements.get('cart-remove-button')) {
 
 ***--add script & check***
 ```html
-<script src="{{ 'ajax-cart.js' | asset_url }}" defer></script>
+<script src="{{ 'product-form.js' | asset_url }}" defer></script>
 ```
 
 ***-- create data object**
@@ -137,4 +141,7 @@ const parsedContent = parsedHTML.querySelector('.shopify-section')
 if (parsedContent) {
 ...
 ```
+
+### Update cart when quantity is updated
+***-- create quantity-input element***
 ***-- ***
