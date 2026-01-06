@@ -144,4 +144,75 @@ if (parsedContent) {
 
 ### Update cart when quantity is updated
 ***-- create quantity-input element***
+```liquid
+<quantity-input>
+	<input
+		id="quantity-{{ forloop.index }}"
+		data-index="{{ forloop.index }}"
+		type="number"
+		name="updates[]"
+		value="{{ item.quantity }}"
+	>
+</quantity-input>
+```
+***-- add onChange event & check: cart.js***
+```js
+class CartItems extends HTMLElement {
+	constructor() {
+		super()
+		this.addEventListener('change', this.handleChange.bind(this))
+	}
+
+	handleChange(e) {
+		console.log(e)
+	}
+}
+```
+***-- create fetch API: updateQuantity()***
+```js
+updateQuantity(line, quantity, sections) {
+	console.log(line, quantity, sections)
+
+	const data = {
+		line,
+		quantity,
+		sections
+	}
+
+	fetch(`${window.Shopify.routes.root}cart/change.js`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'X-Requested-With': 'XMLHttpRequest'
+		},
+		body: JSON.stringify(data)
+	})
+		.then(response => {
+			console.log(response)
+			return response.json()
+		})
+		.then(data => {
+			console.log(data)
+			if (data.sections) {
+				document.dispatchEvent(
+					new CustomEvent('cart:change', {
+						detail: {
+							sections: data.sections
+						}
+					})
+				)
+			}
+		})
+		.catch(error => {
+			console.error('AJAX Cart Error:', error)
+		})
+}
+```
+***-- update handleChange()***
+```js
+...
+const index = e.target.dataset.index
+const quantity = e.target.value
+const sections = 'main-cart-items,cart-icon-bubble,cart-drawer'
+this.updateQuantity(index, quantity, sections)
 ***-- ***
