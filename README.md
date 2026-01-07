@@ -17,6 +17,14 @@
 	>
 </quantity-input>
 ```
+***-- add assets/cart.js***
+```liquid
+<script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
+```
+***-- modify main-cart-items.liquid***
+```html
+<cart-items class="cart-items">
+```
 ***-- add onChange event & check: cart.js***
 ```js
 class CartItems extends HTMLElement {
@@ -28,6 +36,9 @@ class CartItems extends HTMLElement {
 	handleChange(e) {
 		console.log(e)
 	}
+}
+if (!customElements.get('cart-items')) {
+	customElements.define('cart-items', CartItems)
 }
 ```
 ***-- create fetch API: updateQuantity()***
@@ -114,91 +125,9 @@ function bundledSections(sections) {
 }
 ```
 
-
-
-
-### update cart remove button: main-cart-items.liquid
-***--add cart-remove-button***
-```liquid
-<cart-remove-button
-  id="cart-remove-{{ forloop.index }}"
-  data-index="{{ forloop.index }}"
->
-  <a href="{{ item.url_to_remove }}">REMOVE</a>
-</cart-remove-button>
-```
-***--create cartremovebutton component & event listener***
-```js
-class CartRemoveButton extends HTMLElement {
-	connectedCallback() {
-		this.addEventListener('click', this.removeCartItem.bind(this))
-	}
-
-	disconnectedCallback() {
-		this.removeEventListener('click', this.removeCartItem.bind(this))
-	}
-
-	removeCartItem(e) {
-		e.preventDefault()
-		console.log(e)
-	}
-}
-
-if (!customElements.get('cart-remove-button')) {
-	customElements.define('cart-remove-button', CartRemoveButton)
-```
-
-***--add script & check***
+***-- modify snippets/cart-drawer.liquid***
 ```html
-<script src="{{ 'product-form.js' | asset_url }}" defer></script>
-```
-
-***-- create data object**
-```js
-const data = {
-  line: this.dataset.index,
-  quantity: 0
-}
-```
-
-***-- create fetch API & log response**
-```js
-fetch(`${window.Shopify.routes.root}cart/change.js`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify(data)
-})
-  .then(response => {
-    console.log(response)
-    return response.json()
-  })
-  .then(data => {
-    console.log(data)
-  })
-  .catch(error => {
-    console.error('AJAX Cart Error:', error)
-  })
-```
-***-- add bundled section rendering***
-```js
-const data = {
-  ...
-  sections: 'main-cart-items,cart-icon-bubble,cart-drawer'
-}
-```
-***-- dispatch new event(cart:removed)***
-```js
-if (data.sections) {
-  document.dispatchEvent(
-    new CustomEvent('cart:removed', {
-      detail: {
-        sections: data.sections
-      }
-    })
-  )
-}
+<cart-items class="cart-items">
 ```
 
 ***-- prevent cart-drawer from closing/flickering***
@@ -223,4 +152,34 @@ const parsedContent = parsedHTML.querySelector('.shopify-section')
 if (parsedContent) {
 ...
 ```
-***-- ***
+
+### update cart remove button: main-cart-items.liquid
+***--add cart-remove-button***
+```liquid
+<cart-remove-button
+  id="cart-remove-{{ forloop.index }}"
+  data-index="{{ forloop.index }}"
+>
+  <a href="{{ item.url_to_remove }}">REMOVE</a>
+</cart-remove-button>
+```
+***--create cartremovebutton component & event listener***
+```js
+class CartRemoveButton extends HTMLElement {
+	constructor() {
+		super()
+		this.addEventListener('click', e => {
+			e.preventDefault()
+			const cartItems = this.closest('cart-items')
+			cartItems.updateQuantity(this.dataset.index, 0, 'main-cart-items,cart-icon-bubble,cart-drawer')
+		})
+	}
+}
+
+if (!customElements.get('cart-remove-button')) {
+	customElements.define('cart-remove-button', CartRemoveButton)
+}
+```
+
+### update cart remove button: snippets/cart-drawer.liquid
+***-- smae above***
