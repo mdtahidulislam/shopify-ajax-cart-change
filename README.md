@@ -153,6 +153,38 @@ if (parsedContent) {
 ...
 ```
 
+***-- handle quantity error***
+```liquid
+<p
+	class="cart-item-error text-danger"
+	id="cart-item-error-{{ forloop.index }}"
+></p>
+```
+```liquid
+for cart-drawer
+<p
+	class="cart-item-error text-danger"
+	id="cart-drawer-item-error-{{ forloop.index }}"
+></p>
+```
+
+***-- modify cart.js: handleQuantityError()***
+```js
+if (data.status === 422) {
+	this.handleQuantityError(line, data.description)
+	return
+}
+
+handleQuantityError(line, message) {
+	const errorElement = document.getElementById(`cart-item-error-${line}`) || document.getElementById(`cart-drawer-item-error-${line}`)
+	errorElement.textContent = message
+
+	setTimeout(() => {
+		errorElement.textContent = ''
+	}, 3000)
+}
+```
+
 ### update cart remove button: main-cart-items.liquid
 ***--add cart-remove-button***
 ```liquid
