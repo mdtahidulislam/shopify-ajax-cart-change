@@ -1,6 +1,25 @@
 # AJAX Cart API: change.js
 
 ## Key points:
+* Endpoint: **POST /{locale}/cart/cahnge.js**
+* Change the <code>quantity</code>, <code>properties</code>, and <code>selling_plan</code>
+* Remove line item
+* Identify line item using <code>id</code> or <code>line</code> property.
+* <code>id</code> = line item's **variant_id** or **key**.
+* <code>line</code> = 1-based index number of line item's.
+* <code>quantity</code> = number of units to change **( 0 to remove)**
+* Supports changing **one line item** at a same time.
+* Only items already in your cart can be changed
+* Request can be made using the **Fetch API**.
+* Send payload as **JSON**
+* Set header <code>Content-Type: application/json</code>.
+* Response returns **JSON of cart**
+
+## Quantity Error:
+* If available **quantity exceeds** only automatically **adds the maximum available quantity**
+* Excess quantity is **ignored**
+* No error is thrown; cart reflects **in-stock limit**
+  * exceeds quantity
 
 ## Steps
 
