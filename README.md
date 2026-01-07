@@ -4,6 +4,119 @@
 
 ## Steps
 
+### Update cart when quantity is updated
+***-- create quantity-input element***
+```liquid
+<quantity-input>
+	<input
+		id="quantity-{{ forloop.index }}"
+		data-index="{{ forloop.index }}"
+		type="number"
+		name="updates[]"
+		value="{{ item.quantity }}"
+	>
+</quantity-input>
+```
+***-- add onChange event & check: cart.js***
+```js
+class CartItems extends HTMLElement {
+	constructor() {
+		super()
+		this.addEventListener('change', this.handleChange.bind(this))
+	}
+
+	handleChange(e) {
+		console.log(e)
+	}
+}
+```
+***-- create fetch API: updateQuantity()***
+```js
+updateQuantity(line, quantity, sections) {
+	console.log(line, quantity, sections)
+
+	const data = {
+		line,
+		quantity,
+		sections
+	}
+
+	fetch(`${window.Shopify.routes.root}cart/change.js`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'X-Requested-With': 'XMLHttpRequest'
+		},
+		body: JSON.stringify(data)
+	})
+		.then(response => {
+			console.log(response)
+			return response.json()
+		})
+		.then(data => {
+			console.log(data)
+		})
+		.catch(error => {
+			console.error('AJAX Cart Error:', error)
+		})
+}
+```
+***-- update handleChange()***
+```js
+...
+const index = e.target.dataset.index
+const quantity = e.target.value
+const sections = 'main-cart-items,cart-icon-bubble,cart-drawer'
+this.updateQuantity(index, quantity, sections)
+***-- dispatch cart:change event***
+```js
+if (data.sections) {
+	document.dispatchEvent(
+		new CustomEvent('cart:change', {
+			detail: {
+				sections: data.sections
+			}
+		})
+	)
+}
+```
+
+***-- listen the event & refactor global.js***
+```js
+document.addEventListener('cart:updated', e => {
+	const sections = e.detail.sections
+	bundledSections(sections)
+	openCartDrawer()
+})
+
+document.addEventListener('cart:change', e => {
+	const sections = e.detail.sections
+	bundledSections(sections)
+})
+
+function bundledSections(sections) {
+	Object.keys(sections).forEach(sectionId => {
+		const target = document.getElementById(sectionId) || document.getElementById(`shopify-section-${sectionId}`)
+		if (target) {
+			console.log(`Updating section: ${sectionId}`)
+			const parsedHTML = new DOMParser().parseFromString(sections[sectionId], 'text/html')
+			const parsedContent = parsedHTML.querySelector('.shopify-section')
+			if (parsedContent) {
+				target.innerHTML = content.innerHTML
+			} else {
+				// Fallback if shopify-section wrapper isn't found
+				target.innerHTML = sections[sectionId]
+			}
+		} else {
+			console.warn(`Target not found for section: ${sectionId}`)
+		}
+	})
+}
+```
+
+
+
+
 ### update cart remove button: main-cart-items.liquid
 ***--add cart-remove-button***
 ```liquid
@@ -87,38 +200,7 @@ if (data.sections) {
   )
 }
 ```
-***-- listen the event: cart:removed & refactor global.js***
-```js
-document.addEventListener('cart:updated', e => {
-	const sections = e.detail.sections
-	bundledSections(sections)
-	openCartDrawer()
-})
 
-document.addEventListener('cart:removed', e => {
-	const sections = e.detail.sections
-	bundledSections(sections)
-})
-
-function bundledSections(sections) {
-	Object.keys(sections).forEach(sectionId => {
-		const target = document.getElementById(sectionId) || document.getElementById(`shopify-section-${sectionId}`)
-		if (target) {
-			console.log(`Updating section: ${sectionId}`)
-			const parsedHTML = new DOMParser().parseFromString(sections[sectionId], 'text/html')
-			const parsedContent = parsedHTML.querySelector('.shopify-section')
-			if (parsedContent) {
-				target.innerHTML = content.innerHTML
-			} else {
-				// Fallback if shopify-section wrapper isn't found
-				target.innerHTML = sections[sectionId]
-			}
-		} else {
-			console.warn(`Target not found for section: ${sectionId}`)
-		}
-	})
-}
-```
 ***-- prevent cart-drawer from closing/flickering***
 ```js
 ...
@@ -141,78 +223,4 @@ const parsedContent = parsedHTML.querySelector('.shopify-section')
 if (parsedContent) {
 ...
 ```
-
-### Update cart when quantity is updated
-***-- create quantity-input element***
-```liquid
-<quantity-input>
-	<input
-		id="quantity-{{ forloop.index }}"
-		data-index="{{ forloop.index }}"
-		type="number"
-		name="updates[]"
-		value="{{ item.quantity }}"
-	>
-</quantity-input>
-```
-***-- add onChange event & check: cart.js***
-```js
-class CartItems extends HTMLElement {
-	constructor() {
-		super()
-		this.addEventListener('change', this.handleChange.bind(this))
-	}
-
-	handleChange(e) {
-		console.log(e)
-	}
-}
-```
-***-- create fetch API: updateQuantity()***
-```js
-updateQuantity(line, quantity, sections) {
-	console.log(line, quantity, sections)
-
-	const data = {
-		line,
-		quantity,
-		sections
-	}
-
-	fetch(`${window.Shopify.routes.root}cart/change.js`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			'X-Requested-With': 'XMLHttpRequest'
-		},
-		body: JSON.stringify(data)
-	})
-		.then(response => {
-			console.log(response)
-			return response.json()
-		})
-		.then(data => {
-			console.log(data)
-			if (data.sections) {
-				document.dispatchEvent(
-					new CustomEvent('cart:change', {
-						detail: {
-							sections: data.sections
-						}
-					})
-				)
-			}
-		})
-		.catch(error => {
-			console.error('AJAX Cart Error:', error)
-		})
-}
-```
-***-- update handleChange()***
-```js
-...
-const index = e.target.dataset.index
-const quantity = e.target.value
-const sections = 'main-cart-items,cart-icon-bubble,cart-drawer'
-this.updateQuantity(index, quantity, sections)
 ***-- ***
